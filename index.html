@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline Code Editor with JavaScript Toggle</title>
+    <title>Offline Code Editor with Dynamic Layout</title>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
+            overflow: hidden; /* Prevents scrolling */
             display: flex;
             flex-direction: column;
             font-family: Arial, sans-serif;
@@ -19,6 +20,8 @@
             justify-content: space-around;
             background-color: #333;
             color: white;
+            flex-shrink: 0; /* Ensure the tab bar does not shrink */
+            height: 50px; /* Fixed height for the tab bar */
         }
 
         label {
@@ -29,6 +32,7 @@
             background-color: #444;
             border-bottom: 2px solid transparent;
             transition: background-color 0.3s ease;
+            line-height: 30px; /* Line height adjusted for label height */
         }
 
         label.active {
@@ -42,12 +46,14 @@
             border: none;
             box-sizing: border-box;
             display: none;
+            overflow: auto; /* Allow content inside to scroll if necessary */
         }
 
         #editor {
             padding: 10px;
             font-family: monospace;
             font-size: 16px;
+            resize: none; /* Disable manual resizing */
         }
     </style>
 </head>
@@ -67,12 +73,21 @@
         const editor = document.getElementById('editor');
         const preview = document.getElementById('preview');
 
+        function adjustEditorHeight() {
+            const viewportHeight = window.innerHeight;
+            const tabsHeight = document.querySelector('.tabs').offsetHeight;
+            const availableHeight = viewportHeight - tabsHeight;
+            editor.style.height = `${availableHeight}px`;
+            preview.style.height = `${availableHeight}px`;
+        }
+
         function toggleView(view) {
             if (view === 'editor') {
                 editor.style.display = 'block';
                 preview.style.display = 'none';
                 editorTab.classList.add('active');
                 previewTab.classList.remove('active');
+                adjustEditorHeight();
             } else if (view === 'preview') {
                 const html = editor.value;
                 const hash = computeHash(html);
@@ -84,6 +99,7 @@
                 preview.style.display = 'block';
                 previewTab.classList.add('active');
                 editorTab.classList.remove('active');
+                adjustEditorHeight();
             }
         }
 
@@ -125,6 +141,8 @@
 
         editorTab.addEventListener('click', () => toggleView('editor'));
         previewTab.addEventListener('click', () => toggleView('preview'));
+
+        window.addEventListener('resize', adjustEditorHeight);
 
         // Initialize with any saved content from local storage based on the URL hash
         loadHTMLFromQueryString();
