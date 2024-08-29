@@ -73,10 +73,6 @@
                 preview.style.display = 'none';
                 editorTab.classList.add('active');
                 previewTab.classList.remove('active');
-                
-                // Automatically select all text in the editor
-                editor.focus();
-                editor.select();
             } else if (view === 'preview') {
                 const html = editor.value;
                 const hash = computeHash(html);
@@ -138,8 +134,9 @@
             editor.value = "<h1>Hello World</h1><p>This is a live preview.</p>";
         }
 
-        // Set initial view to the editor
+        // Set initial view to the editor and select all text
         toggleView('editor');
+        editor.select();  // Select all text in the editor on page load
     </script>
 
 </body>
