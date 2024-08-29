@@ -3,27 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline Code Editor with Dynamic Layout</title>
+    <title>Offline Code Editor with Flexbox</title>
     <style>
+        /* Ensures the body and html take full height and prevent scrolling */
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
-            overflow: hidden; /* Prevents scrolling */
+            overflow: hidden; /* Prevent page scroll */
             display: flex;
             flex-direction: column;
             font-family: Arial, sans-serif;
         }
 
+        /* Tab container styling */
         .tabs {
             display: flex;
             justify-content: space-around;
             background-color: #333;
             color: white;
-            flex-shrink: 0; /* Ensure the tab bar does not shrink */
-            height: 50px; /* Fixed height for the tab bar */
+            flex-shrink: 0; /* Prevents the tab bar from shrinking */
         }
 
+        /* Styling for the tab labels */
         label {
             flex: 1;
             text-align: center;
@@ -32,39 +34,45 @@
             background-color: #444;
             border-bottom: 2px solid transparent;
             transition: background-color 0.3s ease;
-            line-height: 30px; /* Line height adjusted for label height */
         }
 
+        /* Active tab styling */
         label.active {
             background-color: #555;
             border-bottom: 2px solid #f90;
         }
 
+        /* Editor and preview container settings */
         #editor, #preview {
             flex: 1;
             width: 100%;
             border: none;
             box-sizing: border-box;
             display: none;
-            overflow: auto; /* Allow content inside to scroll if necessary */
+            overflow: auto; /* Ensure content within can scroll if necessary */
         }
 
+        /* Styling for the editor textarea */
         #editor {
             padding: 10px;
             font-family: monospace;
             font-size: 16px;
-            resize: none; /* Disable manual resizing */
+            resize: none; /* Prevent resizing by user */
         }
     </style>
 </head>
 <body>
 
+    <!-- Tab container -->
     <div class="tabs">
         <label id="editorTab" class="active">Editor</label>
         <label id="previewTab">Preview</label>
     </div>
 
+    <!-- Editor textarea -->
     <textarea id="editor" placeholder="Type your HTML code here..."></textarea>
+    
+    <!-- Preview iframe -->
     <iframe id="preview"></iframe>
 
     <script>
@@ -73,86 +81,28 @@
         const editor = document.getElementById('editor');
         const preview = document.getElementById('preview');
 
-        function adjustEditorHeight() {
-            const viewportHeight = window.innerHeight;
-            const tabsHeight = document.querySelector('.tabs').offsetHeight;
-            const availableHeight = viewportHeight - tabsHeight;
-            editor.style.height = `${availableHeight}px`;
-            preview.style.height = `${availableHeight}px`;
-        }
-
         function toggleView(view) {
             if (view === 'editor') {
                 editor.style.display = 'block';
                 preview.style.display = 'none';
                 editorTab.classList.add('active');
                 previewTab.classList.remove('active');
-                adjustEditorHeight();
             } else if (view === 'preview') {
                 const html = editor.value;
-                const hash = computeHash(html);
-                updateQueryString(hash);
-                saveToLocalStorage(hash, html);
                 preview.srcdoc = html;
 
                 editor.style.display = 'none';
                 preview.style.display = 'block';
                 previewTab.classList.add('active');
                 editorTab.classList.remove('active');
-                adjustEditorHeight();
             }
         }
 
-        function computeHash(str) {
-            let hash = 0, i, chr;
-            if (str.length === 0) return hash;
-            for (i = 0; i < str.length; i++) {
-                chr = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + chr;
-                hash |= 0; // Convert to 32bit integer
-            }
-            return hash.toString(16);
-        }
-
-        function updateQueryString(hash) {
-            const url = new URL(window.location);
-            url.searchParams.set('hash', hash);
-            history.replaceState(null, '', url.toString());
-        }
-
-        function saveToLocalStorage(hash, html) {
-            localStorage.setItem(hash, html);
-        }
-
-        function loadFromLocalStorage(hash) {
-            return localStorage.getItem(hash);
-        }
-
-        function loadHTMLFromQueryString() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const hash = urlParams.get('hash');
-            if (hash) {
-                const savedHTML = loadFromLocalStorage(hash);
-                if (savedHTML) {
-                    editor.value = savedHTML;
-                }
-            }
-        }
-
+        // Toggle between editor and preview on tab click
         editorTab.addEventListener('click', () => toggleView('editor'));
         previewTab.addEventListener('click', () => toggleView('preview'));
 
-        window.addEventListener('resize', adjustEditorHeight);
-
-        // Initialize with any saved content from local storage based on the URL hash
-        loadHTMLFromQueryString();
-
-        // Optionally, initialize the editor with some default content if no content is loaded
-        if (!editor.value) {
-            editor.value = "<h1>Hello World</h1><p>This is a live preview.</p>";
-        }
-
-        // Set initial view to the editor and select all text
+        // Set initial view to the editor
         toggleView('editor');
         editor.select();  // Select all text in the editor on page load
     </script>
