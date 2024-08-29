@@ -3,16 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline Code Editor with Keyboard Detection</title>
+    <title>Offline Code Editor with Tabs at the Bottom</title>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
-            overflow: hidden; /* Prevent page scroll */
             display: flex;
             flex-direction: column;
             font-family: Arial, sans-serif;
+        }
+
+        #editor, #preview {
+            flex: 1;
+            width: 100%;
+            border: none;
+            box-sizing: border-box;
+            display: none;
+        }
+
+        #editor {
+            padding: 10px;
+            font-family: monospace;
+            font-size: 16px;
         }
 
         .tabs {
@@ -20,8 +33,8 @@
             justify-content: space-around;
             background-color: #333;
             color: white;
-            flex-shrink: 0; /* Prevents the tab bar from shrinking */
-            position: static; /* Default position */
+            position: fixed;
+            bottom: 0;
             width: 100%;
         }
 
@@ -31,49 +44,41 @@
             padding: 10px;
             cursor: pointer;
             background-color: #444;
-            border-bottom: 2px solid transparent;
+            border-top: 2px solid transparent;
             transition: background-color 0.3s ease;
         }
 
         label.active {
             background-color: #555;
-            border-bottom: 2px solid #f90;
+            border-top: 2px solid #f90;
         }
 
-        #editor, #preview {
+        /* Adjust the height of the editor and preview to leave space for the tabs */
+        .content {
             flex: 1;
-            width: 100%;
-            border: none;
-            box-sizing: border-box;
-            display: none;
-            overflow: auto; /* Ensure content within can scroll if necessary */
-        }
-
-        #editor {
-            padding: 10px;
-            font-family: monospace;
-            font-size: 16px;
-            resize: none; /* Prevent resizing by user */
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 50px; /* height of the tab bar */
         }
     </style>
 </head>
 <body>
+
+    <div class="content">
+        <textarea id="editor" placeholder="Type your HTML code here..."></textarea>
+        <iframe id="preview"></iframe>
+    </div>
 
     <div class="tabs">
         <label id="editorTab" class="active">Editor</label>
         <label id="previewTab">Preview</label>
     </div>
 
-    <textarea id="editor" placeholder="Type your HTML code here..."></textarea>
-    
-    <iframe id="preview"></iframe>
-
     <script>
         const editorTab = document.getElementById('editorTab');
         const previewTab = document.getElementById('previewTab');
         const editor = document.getElementById('editor');
         const preview = document.getElementById('preview');
-        const tabs = document.querySelector('.tabs');
 
         function toggleView(view) {
             if (view === 'editor') {
@@ -83,6 +88,9 @@
                 previewTab.classList.remove('active');
             } else if (view === 'preview') {
                 const html = editor.value;
+                const hash = computeHash(html);
+                updateQueryString(hash);
+                saveToLocalStorage(hash, html);
                 preview.srcdoc = html;
 
                 editor.style.display = 'none';
@@ -92,33 +100,56 @@
             }
         }
 
-        function adjustTabPosition() {
-            const isKeyboardVisible = window.innerHeight < screen.height * 0.7; // Detect keyboard presence
+        function computeHash(str) {
+            let hash = 0, i, chr;
+            if (str.length === 0) return hash;
+            for (i = 0; i < str.length; i++) {
+                chr = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + chr;
+                hash |= 0; // Convert to 32bit integer
+            }
+            return hash.toString(16);
+        }
 
-            if (isKeyboardVisible) {
-                tabs.style.position = 'fixed';
-                tabs.style.top = '0';  // Position at the top of the viewport
-                tabs.style.width = '100%';
-                tabs.style.zIndex = '1000';  // Ensure it stays above other content
-            } else {
-                tabs.style.position = 'static';  // Reset positioning when keyboard is hidden
+        function updateQueryString(hash) {
+            const url = new URL(window.location);
+            url.searchParams.set('hash', hash);
+            history.replaceState(null, '', url.toString());
+        }
+
+        function saveToLocalStorage(hash, html) {
+            localStorage.setItem(hash, html);
+        }
+
+        function loadFromLocalStorage(hash) {
+            return localStorage.getItem(hash);
+        }
+
+        function loadHTMLFromQueryString() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hash = urlParams.get('hash');
+            if (hash) {
+                const savedHTML = loadFromLocalStorage(hash);
+                if (savedHTML) {
+                    editor.value = savedHTML;
+                }
             }
         }
 
-        // Listen for resize events to adjust tab position
-        window.addEventListener('resize', adjustTabPosition);
-
-        // Toggle between editor and preview on tab click
         editorTab.addEventListener('click', () => toggleView('editor'));
         previewTab.addEventListener('click', () => toggleView('preview'));
+
+        // Initialize with any saved content from local storage based on the URL hash
+        loadHTMLFromQueryString();
+
+        // Optionally, initialize the editor with some default content if no content is loaded
+        if (!editor.value) {
+            editor.value = "<h1>Hello World</h1><p>This is a live preview.</p>";
+        }
 
         // Set initial view to the editor and select all text
         toggleView('editor');
         editor.select();  // Select all text in the editor on page load
-
-        // Initial adjustment for tab position
-        adjustTabPosition();
-
     </script>
 
 </body>
