@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline Code Editor with Radio Button Tabs</title>
+    <title>Offline Code Editor with JavaScript Toggle</title>
     <style>
         body, html {
             margin: 0;
@@ -21,10 +21,6 @@
             color: white;
         }
 
-        input[type="radio"] {
-            display: none;
-        }
-
         label {
             flex: 1;
             text-align: center;
@@ -35,7 +31,7 @@
             transition: background-color 0.3s ease;
         }
 
-        input[type="radio"]:checked + label {
+        label.active {
             background-color: #555;
             border-bottom: 2px solid #f90;
         }
@@ -53,28 +49,43 @@
             font-family: monospace;
             font-size: 16px;
         }
-
-        #editorTab:checked ~ #editor,
-        #previewTab:checked ~ #preview {
-            display: block;
-        }
     </style>
 </head>
 <body>
 
     <div class="tabs">
-        <input type="radio" id="editorTab" name="tab" checked>
-        <label for="editorTab">Editor</label>
-        <input type="radio" id="previewTab" name="tab">
-        <label for="previewTab">Preview</label>
+        <label id="editorTab" class="active">Editor</label>
+        <label id="previewTab">Preview</label>
     </div>
 
     <textarea id="editor" placeholder="Type your HTML code here..."></textarea>
     <iframe id="preview"></iframe>
 
     <script>
+        const editorTab = document.getElementById('editorTab');
+        const previewTab = document.getElementById('previewTab');
         const editor = document.getElementById('editor');
         const preview = document.getElementById('preview');
+
+        function toggleView(view) {
+            if (view === 'editor') {
+                editor.style.display = 'block';
+                preview.style.display = 'none';
+                editorTab.classList.add('active');
+                previewTab.classList.remove('active');
+            } else if (view === 'preview') {
+                const html = editor.value;
+                const hash = computeHash(html);
+                updateQueryString(hash);
+                saveToLocalStorage(hash, html);
+                preview.srcdoc = html;
+
+                editor.style.display = 'none';
+                preview.style.display = 'block';
+                previewTab.classList.add('active');
+                editorTab.classList.remove('active');
+            }
+        }
 
         function computeHash(str) {
             let hash = 0, i, chr;
@@ -112,13 +123,8 @@
             }
         }
 
-        document.getElementById('previewTab').addEventListener('change', () => {
-            const html = editor.value;
-            const hash = computeHash(html);
-            updateQueryString(hash);
-            saveToLocalStorage(hash, html);
-            preview.srcdoc = html;
-        });
+        editorTab.addEventListener('click', () => toggleView('editor'));
+        previewTab.addEventListener('click', () => toggleView('preview'));
 
         // Initialize with any saved content from local storage based on the URL hash
         loadHTMLFromQueryString();
@@ -127,6 +133,9 @@
         if (!editor.value) {
             editor.value = "<h1>Hello World</h1><p>This is a live preview.</p>";
         }
+
+        // Set initial view to the editor
+        toggleView('editor');
     </script>
 
 </body>
