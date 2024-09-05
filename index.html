@@ -120,6 +120,7 @@
 
         function saveToLocalStorage(hash, html) {
             localStorage.setItem(hash, html);
+            localStorage.setItem('lastSavedHash', hash); // Save the last hash to local storage
         }
 
         function loadFromLocalStorage(hash) {
@@ -134,13 +135,22 @@
                 if (savedHTML) {
                     editor.value = savedHTML;
                 }
+            } else {
+                const lastSavedHash = localStorage.getItem('lastSavedHash'); // Check if there is a saved hash
+                if (lastSavedHash) {
+                    const savedHTML = loadFromLocalStorage(lastSavedHash);
+                    if (savedHTML) {
+                        editor.value = savedHTML;
+                        updateQueryString(lastSavedHash); // Update the URL with the last saved hash
+                    }
+                }
             }
         }
 
         editorTab.addEventListener('click', () => toggleView('editor'));
         previewTab.addEventListener('click', () => toggleView('preview'));
 
-        // Initialize with any saved content from local storage based on the URL hash
+        // Initialize with any saved content from local storage based on the URL hash or last saved hash
         loadHTMLFromQueryString();
 
         // Optionally, initialize the editor with some default content if no content is loaded
