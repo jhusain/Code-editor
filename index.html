@@ -75,6 +75,9 @@
         <label id="previewTab">Preview</label>
     </div>
 
+    <!-- Include jsdiff library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.1.0/diff.min.js"></script>
+
     <script>
         const editorTab = document.getElementById('editorTab');
         const previewTab = document.getElementById('previewTab');
@@ -147,8 +150,49 @@
             }
         }
 
+        // Function to apply diff using jsdiff
+        function applyDiff(currentText, diffText) {
+            try {
+                // Use jsdiff to apply the patch
+                const patch = diffText;
+                const newText = Diff.applyPatch(currentText, patch);
+
+                if (newText === false) {
+                    console.error('Failed to apply patch');
+                    return null;
+                }
+
+                return newText;
+            } catch (error) {
+                console.error('Error applying diff:', error);
+                return null;
+            }
+        }
+
+        // Function to handle double-click on the editor tab
+        async function handleEditorTabDoubleClick() {
+            try {
+                const clipboardText = await navigator.clipboard.readText();
+                const currentText = editor.value;
+                const newText = applyDiff(currentText, clipboardText);
+
+                if (newText !== null) {
+                    editor.value = newText;
+                    alert('Diff applied successfully!');
+                } else {
+                    alert('Failed to apply diff.');
+                }
+            } catch (error) {
+                console.error('Error reading from clipboard:', error);
+                alert('Could not read from clipboard.');
+            }
+        }
+
         editorTab.addEventListener('click', () => toggleView('editor'));
         previewTab.addEventListener('click', () => toggleView('preview'));
+
+        // Add the double-click event listener to the editor tab
+        editorTab.addEventListener('dblclick', handleEditorTabDoubleClick);
 
         // Initialize with any saved content from local storage based on the URL hash or last saved hash
         loadHTMLFromQueryString();
