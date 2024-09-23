@@ -74,73 +74,11 @@
         <label id="editorTab" class="active">Editor</label>
         <label id="previewTab">Preview</label>
     </div>
+
+    <!-- Include jsdiff library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.1.0/diff.min.js"></script>
+
     <script>
-
-        /**
-         * Applies an ed-style diff to the original text.
-         *
-         * @param {string} originalText - The original text to be patched.
-         * @param {string} edDiff - The ed-style diff script.
-         * @returns {string} - The patched text.
-         */
-        function applyEdDiff(originalText, edDiff) {
-            // Split the original text into an array of lines
-            let lines = originalText.split('\n');
-            
-            // Split the ed diff into individual lines
-            const diffLines = edDiff.split('\n');
-            let i = 0;
-        
-            while (i < diffLines.length) {
-                const commandLine = diffLines[i].trim();
-                const commandMatch = commandLine.match(/^(\d+)(?:,(\d+))?([adc])$/);
-        
-                if (commandMatch) {
-                    const startLineNum = parseInt(commandMatch[1], 10);
-                    const endLineNum = commandMatch[2] ? parseInt(commandMatch[2], 10) : startLineNum;
-                    const command = commandMatch[3];
-                    
-                    // Adjust line numbers for zero-based indexing
-                    const startIndex = startLineNum - 1;
-                    const endIndex = endLineNum - 1;
-        
-                    if (command === 'd') {
-                        // Delete lines from startIndex to endIndex
-                        lines.splice(startIndex, endIndex - startIndex + 1);
-                        i++;
-                    } else if (command === 'a') {
-                        // Add lines after endIndex
-                        const addedLines = [];
-                        i++;
-                        while (diffLines[i] !== '.') {
-                            addedLines.push(diffLines[i]);
-                            i++;
-                        }
-                        lines.splice(endIndex + 1, 0, ...addedLines);
-                        i++; // Skip the '.'
-                    } else if (command === 'c') {
-                        // Replace lines from startIndex to endIndex
-                        const newLines = [];
-                        i++;
-                        while (diffLines[i] !== '.') {
-                            newLines.push(diffLines[i]);
-                            i++;
-                        }
-                        lines.splice(startIndex, endIndex - startIndex + 1, ...newLines);
-                        i++; // Skip the '.'
-                    } else {
-                        throw new Error(`Unknown command: ${command}`);
-                    }
-                } else {
-                    // Ignore lines that don't match command patterns
-                    i++;
-                }
-            }
-        
-            // Join the lines back together
-            return lines.join('\n');
-        }
-
         const editorTab = document.getElementById('editorTab');
         const previewTab = document.getElementById('previewTab');
         const editor = document.getElementById('editor');
@@ -217,7 +155,7 @@
             try {
                 // Use jsdiff to apply the patch
                 const patch = diffText;
-                const newText = applyEdDiff(currentText, patch);
+                const newText = Diff.applyPatch(currentText, patch);
 
                 if (newText === false) {
                     console.error('Failed to apply patch');
